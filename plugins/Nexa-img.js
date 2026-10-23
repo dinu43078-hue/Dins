@@ -1,7 +1,5 @@
 const config = require('../config')
 const { cmd, commands } = require('../command')
-const fs = require('fs')
-const path = require('path')
 
 cmd({
     pattern: "img",
@@ -11,42 +9,108 @@ cmd({
     react: "🎨",
     filename: __filename
 },
-async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sender, senderNumber, botNumber2, botNumber, pushname, isMe, isOwner, groupMetadata, groupName, participants, groupAdmins, isBotAdmins, isAdmins, reply }) => {
+async (conn, mek, m, {
+    from,
+    q,
+    reply
+}) => {
+    let loading;
+
     try {
-        if (!q) return reply('❌ *Image AI* ට මොකක් හරි prompt එකක් දෙන්න...\n\nඋදා: `.img a cute cat in space`')
-
-        // Loading message
-        const loading = await conn.sendMessage(from, { text: '🎨 *Generating AI Image...*' }, { quoted: mek })
-
-        // API call
-        const apiUrl = `https://arslan-apis-v2.vercel.app/ai/text2img?prompt=${encodeURIComponent(q)}`
-        const res = await fetch(apiUrl)
-        const data = await res.json()
-
-        if (!data.status || !data.result) {
-            await conn.sendMessage(from, { delete: loading.key })
-            return reply('❌ Image generate වුණේ නැහැ. නැවත try කරන්න.')
+        // Check prompt
+        if (!q || !q.trim()) {
+            return reply(
+                '🎨 *AI IMAGE GENERATOR*\n\n' +
+                '❌ කරුණාකර image එක සඳහා prompt එකක් ලබා දෙන්න.\n\n' +
+                '*උදාහරණය:*\n' +
+                '`.img a cute cat in space`\n\n' +
+                '*තවත් උදාහරණයක්:*\n' +
+                '`.img a futuristic black and gold sports car, 4K ultra realistic`'
+            );
         }
 
-        const imageUrl = data.result
+        // Loading message
+        loading = await conn.sendMessage(
+            from,
+            {
+                text: '🎨 *AI Image Generator*\n\n' +
+                      '⏳ ඔයාගේ image එක generate කරමින් පවතී...\n' +
+                      '✨ කරුණාකර මොහොතක් රැඳී සිටින්න.'
+            },
+            { quoted: mek }
+        );
 
-        // Image එක යවනවා
-        await conn.sendMessage(from, {
-            image: { url: imageUrl },
-            caption: `*┏━━━━━━━━━━━━━━━━┓*
-*┃  🎨 ᴀɪ ɪᴍᴀɢᴇ 🎨  ┃*
-*┗━━━━━━━━━━━━━━━━┛*
+        // API URL
+        const apiUrl =
+            'https://arslan-apis-v2.vercel.app/ai/text2img?prompt=' +
+            encodeURIComponent(q.trim());
 
-*Prompt:* ${q}
+        // API request
+        const response = await fetch(apiUrl);
 
-*⚡ Powered by NEXA System*`
-        }, { quoted: mek })
+        if (!response.ok) {
+            throw new Error(
+                'API request failed. HTTP status: ' + response.status
+            );
+        }
 
-        // Loading message එක delete කරනවා
-        await conn.sendMessage(from, { delete: loading.key })
+        const data = await response.json();
 
-    } catch (e) {
-        console.log(e)
-        reply(`❌ Error: ${e.message}`)
+        // Validate API response
+        if (!data || !data.status || !data.result) {
+            throw new Error(
+                data && data.message
+                    ? data.message
+                    : 'API එකෙන් image URL එකක් ලැබුණේ නැහැ.'
+            );
+        }
+
+        const imageUrl = data.result;
+
+        // Send generated image
+        await conn.sendMessage(
+            from,
+            {
+                image: { url: imageUrl },
+                caption:
+                    '╭━━〔 🎨 AI IMAGE 〕━━╮\n' +
+                    '┃\n' +
+                    '┃ ✨ *Image Generated Successfully!*\n' +
+                    '┃\n' +
+                    '╰━━━━━━━━━━━━━━━━━━╯\n\n' +
+                    '📝 *Prompt:*\n' +
+                    q.trim() +
+                    '\n\n' +
+                    '⚡ *Powered by NEXA System*'
+            },
+            { quoted: mek }
+        );
+
+    } catch (error) {
+        console.error('[AI IMAGE ERROR]', error);
+
+        await reply(
+            '❌ *AI Image Generator Error*\n\n' +
+            '⚠️ Image එක generate කරන්න බැරි වුණා.\n\n' +
+            '🔄 කරුණාකර නැවත උත්සාහ කරන්න.\n\n' +
+            '🛠️ *Error:* ' +
+            (error.message || 'Unknown error')
+        );
+
+    } finally {
+        // Delete loading message
+        if (loading && loading.key) {
+            try {
+                await conn.sendMessage(
+                    from,
+                    { delete: loading.key }
+                );
+            } catch (deleteError) {
+                console.log(
+                    '[LOADING DELETE ERROR]',
+                    deleteError.message
+                );
+            }
+        }
     }
-})
+});
