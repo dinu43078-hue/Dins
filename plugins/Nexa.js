@@ -5,7 +5,7 @@ const path = require('path')
 
 cmd({
     pattern: "alive",
-    alias: ["bot", "online"],
+    alias: ["bot", "online", "runtime"],
     desc: "Check if bot is alive.",
     category: "main",
     react: "⚡",
@@ -19,29 +19,29 @@ async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sen
         const seconds = Math.floor(uptime % 60)
         const runtime = `${hours}h ${minutes}m ${seconds}s`
 
-        // Local image path (ඔයා image එක දාපු තැනට අනුව මේ path එක වෙනස් කරන්න)
-        const imgPath = path.join(__dirname, 'alive.jpg')   // plugin එකත් එක්කම folder එකේ තියෙනවා නම්
-        // const imgPath = path.join(__dirname, '../media/alive.jpg')  // media folder එකේ තියෙනවා නම් මේක use කරන්න
+        // Image path - plugin එක තියෙන folder එකේ alive.jpg දාන්න
+        const imgPath = path.join(__dirname, 'alive.jpg')
 
         if (!fs.existsSync(imgPath)) {
-            return reply('❌ alive.jpg image එක හොයාගන්න බෑ. Path එක චෙක් කරන්න.')
+            return reply('❌ *alive.jpg* image එක හොයාගන්න බෑ!\n\nPlugin එක තියෙන folder එකට `alive.jpg` කියලා image එක දාන්න.')
         }
 
         await conn.sendMessage(from, {
             image: fs.readFileSync(imgPath),
-            caption: `*┏━━━━━━━━━━━━━━━┓*
-*┃  ⚡ ɴᴇxᴀ ʙᴏᴛ ⚡  ┃*
-*┗━━━━━━━━━━━━━━━┛*
+            caption: `*┏━━━━━━━━━━━━━━━━┓*
+*┃   ⚡ ɴᴇxᴀ ʙᴏᴛ ⚡   ┃*
+*┗━━━━━━━━━━━━━━━━┛*
 
-*✅ Status    : Online*
-*⏱️ Runtime   : ${runtime}*
-*👑 Owner     : NEXA*
-*⚡ Powered   : NEXA System*
+*✅ Status     :* Online
+*⏱️ Runtime    :* ${runtime}
+*👑 Owner      :* NEXA
+*⚡ Powered    :* NEXA System
 
-*┌─────────────────┐*
+*┌──────────────────┐*
 *│  Where Worlds Connect  │*
-*└─────────────────┘*`
+*└──────────────────┘*`
         }, { quoted: mek })
+
     } catch (e) {
         console.log(e)
         reply(`${e}`)
