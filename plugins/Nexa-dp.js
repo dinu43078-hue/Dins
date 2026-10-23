@@ -188,3 +188,104 @@ async (conn, mek, m, {
         );
     }
 });
+
+
+cmd({
+    pattern: "dp",
+    alias: ["getpp", "getdp", "pp", "profilepic"],
+    desc: "Download WhatsApp profile picture by number",
+    category: "utility",
+    react: "🖼️",
+    filename: __filename
+},
+async (conn, mek, m, {
+    from,
+    q,
+    reply
+}) => {
+    let loading;
+
+    try {
+        if (!q || !q.trim()) {
+            return reply(
+                '🖼️ *WHATSAPP DP DOWNLOADER*\n\n' +
+                '❌ කරුණාකර WhatsApp number එකක් ලබා දෙන්න.\n\n' +
+                '*උදාහරණ:*\n' +
+                '`.dp 94771234567`\n' +
+                '`.dp 0771234567`\n' +
+                '`.dp 9477xxxxxxx`'
+            );
+        }
+
+        // Number clean කරනවා (digits only)
+        let number = q.trim().replace(/[^0-9]/g, '');
+
+        if (number.length < 8 || number.length > 15) {
+            return reply(
+                '❌ *Invalid Number*\n\n' +
+                '⚠️ Number එක හරිද බලන්න.\n\n' +
+                '*උදාහරණ:* `.dp 94771234567`'
+            );
+        }
+
+        // 0 එකෙන් පටන් ගත්තොත් 94 add කරනවා (Sri Lanka)
+        if (number.startsWith('0')) {
+            number = '94' + number.slice(1);
+        }
+
+        // Country code නැත්නම් default 94
+        if (number.length <= 10) {
+            number = '94' + number;
+        }
+
+        const targetJid = number + '@s.whatsapp.net';
+
+        loading = await conn.sendMessage(from, {
+            text: '🖼️ *DP Downloader*\n\n' +
+                  `⏳ ${number} ගේ profile picture ගෙන එමින් පවතී...\n` +
+                  'කරුණාකර මොහොතක් රැඳී සිටින්න.'
+        }, { quoted: mek });
+
+        // Check number WhatsApp එකේ තියෙනවද
+        const [result] = await conn.onWhatsApp(targetJid).catch(() => []);
+        if (!result?.exists) {
+            throw new Error('මේ number එක WhatsApp එකේ register වෙලා නැහැ.');
+        }
+
+        // Profile picture URL ගන්නවා
+        const ppUrl = await conn.profilePictureUrl(targetJid, 'image').catch(() => null);
+
+        if (!ppUrl) {
+            throw new Error('Profile picture එකක් නැහැ හෝ privacy settings නිසා බලන්න බෑ.');
+        }
+
+        // DP එක එවනවා
+        await conn.sendMessage(from, {
+            image: { url: ppUrl },
+            caption:
+                '╭━━〔 🖼️ PROFILE PICTURE 〕━━╮\n' +
+                '┃\n' +
+                `┃ 📱 *Number:* +${number}\n` +
+                '┃ ✅ *Downloaded Successfully*\n' +
+                '┃\n' +
+                '╰━━━━━━━━━━━━━━━━━━╯\n\n' +
+                '⚡ *Powered by NEXA System*'
+        }, { quoted: mek });
+
+    } catch (error) {
+        console.error('[DP DOWNLOAD ERROR]', error);
+        await reply(
+            '❌ *DP Download Error*\n\n' +
+            '⚠️ ' + (error.message || 'Unknown error') + '\n\n' +
+            '🔄 කරුණාකර නැවත උත්සාහ කරන්න.'
+        );
+    } finally {
+        if (loading?.key) {
+            try {
+                await conn.sendMessage(from, { delete: loading.key });
+            } catch (e) {
+                console.log('[LOADING DELETE ERROR]', e.message);
+            }
+        }
+    }
+});
