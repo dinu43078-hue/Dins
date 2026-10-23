@@ -1,5 +1,7 @@
 const config = require('../config')
 const { cmd, commands } = require('../command')
+const fs = require('fs')
+const path = require('path')
 
 cmd({
     pattern: "alive",
@@ -17,24 +19,28 @@ async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sen
         const seconds = Math.floor(uptime % 60)
         const runtime = `${hours}h ${minutes}m ${seconds}s`
 
-        // Image එක Buffer විදිහට download කරනවා
-        const res = await fetch('https://files.catbox.moe/18xnev.jpg')
-        const buffer = Buffer.from(await res.arrayBuffer())
+        // Local image path (ඔයා image එක දාපු තැනට අනුව මේ path එක වෙනස් කරන්න)
+        const imgPath = path.join(__dirname, 'alive.jpg')   // plugin එකත් එක්කම folder එකේ තියෙනවා නම්
+        // const imgPath = path.join(__dirname, '../media/alive.jpg')  // media folder එකේ තියෙනවා නම් මේක use කරන්න
+
+        if (!fs.existsSync(imgPath)) {
+            return reply('❌ alive.jpg image එක හොයාගන්න බෑ. Path එක චෙක් කරන්න.')
+        }
 
         await conn.sendMessage(from, {
-            image: buffer,
-            caption: `*┏━━━━━━━━━━━┓*
-*┃⚡ ɴᴇxᴀ ʙᴏᴛ ⚡┃*
-*┗━━━━━━━━━━━┛*
+            image: fs.readFileSync(imgPath),
+            caption: `*┏━━━━━━━━━━━━━━━┓*
+*┃  ⚡ ɴᴇxᴀ ʙᴏᴛ ⚡  ┃*
+*┗━━━━━━━━━━━━━━━┛*
 
 *✅ Status    : Online*
 *⏱️ Runtime   : ${runtime}*
 *👑 Owner     : NEXA*
-*⚡ Powered   : NEXA Dx*
+*⚡ Powered   : NEXA System*
 
-*┌─────────────┐*
-*│Where Worlds Connect│*
-*└─────────────┘*`
+*┌─────────────────┐*
+*│  Where Worlds Connect  │*
+*└─────────────────┘*`
         }, { quoted: mek })
     } catch (e) {
         console.log(e)
