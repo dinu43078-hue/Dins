@@ -256,8 +256,7 @@ async function Pair(number, res = null) {
             await saveCreds();
             debouncedSaveSession(sessionId, sessionPath);
         });
-
-        sock.ev.on('connection.update', async (update) => {
+sock.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update;
 
     if (connection === 'close') {
@@ -355,37 +354,6 @@ async function Pair(number, res = null) {
                             react: { text: '❤️', key: mek.key }
                         });
                     }
-                    // ==================== ANTI-CALL ====================
-sock.ev.on('call', async (calls) => {
-    try {
-        // boolean true හෝ string 'true' දෙකම support කරනවා
-        if (config.ANTI_CALL !== true && config.ANTI_CALL !== 'true') return;
-
-        for (const call of calls) {
-            if (call.status !== 'offer') continue;
-
-            const callMsg =
-                `⚠️ *ANTI-CALL IS ACTIVE* ⚠️\n\n` +
-                `Dear User,\n\n` +
-                `You have attempted to call the bot.\n` +
-                `To ensure uninterrupted service, please refrain from calling.\n\n` +
-                `Thank you for your understanding.\n\n` +
-                `⚡ *Powered by NEXA System*`;
-
-            // Message එක යවනවා
-            await sock.sendMessage(call.from, { text: callMsg }).catch(() => {});
-
-            // Call එක reject කරනවා
-            await sock.rejectCall(call.id, call.from).catch((err) => {
-                console.error('[ANTI-CALL REJECT ERROR]', err.message);
-            });
-
-            console.log(`📞 Rejected call from: ${call.from}`);
-        }
-    } catch (err) {
-        console.error('[ANTI-CALL ERROR]', err);
-    }
-});
                     return;
                 }
 
@@ -604,4 +572,3 @@ process.on('uncaughtException', (err) => {
     if (e.includes('Value not found')) return;
     console.log('Caught exception:', err);
 });
-{}
