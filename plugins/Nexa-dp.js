@@ -1,7 +1,77 @@
 const config = require('../config')
 const { cmd } = require('../command')
 const { downloadContentFromMessage } = require('@whiskeysockets/baileys')
+const { Sticker, StickerTypes } = require('wa-sticker-formatter')
 
+cmd({
+    pattern: "sticker",
+    alias: ["s", "stiker", "stick"],
+    desc: "Convert image or video to sticker",
+    category: "convert",
+    react: "🎨",
+    filename: __filename
+},
+async (conn, mek, m, {
+    from,
+    reply
+}) => {
+    try {
+        const quoted = mek.message?.extendedTextMessage?.contextInfo?.quotedMessage
+            || m.quoted?.message
+            || null;
+
+        // Direct message හෝ quoted message
+        const imageMsg = mek.message?.imageMessage || quoted?.imageMessage;
+        const videoMsg = mek.message?.videoMessage || quoted?.videoMessage;
+
+        if (!imageMsg && !videoMsg) {
+            return reply(
+                '🎨 *STICKER MAKER*\n\n' +
+                '❌ කරුණාකර *image* හෝ *video* එකකට reply කරන්න.\n\n' +
+                '*Usage:*\n' +
+                '• Image/Video එකකට reply → `.sticker`\n' +
+                '• හෝ image/video එකක් යවලා caption එකේ `.s`'
+            );
+        }
+
+        let buffer;
+
+        if (imageMsg) {
+            const mediaMsg = { message: { imageMessage: imageMsg } };
+            buffer = await downloadMediaMessage(mediaMsg, 'buffer', {});
+        } else if (videoMsg) {
+            if (videoMsg.seconds > 10) {
+                return reply(
+                    '❌ *Video Too Long*\n\n' +
+                    '⚠️ Video එක *10 seconds* ට අඩු විය යුතුයි.'
+                );
+            }
+            const mediaMsg = { message: { videoMessage: videoMsg } };
+            buffer = await downloadMediaMessage(mediaMsg, 'buffer', {});
+        }
+
+        const sticker = new Sticker(buffer, {
+            pack: 'NEXA System',
+            author: 'NEXA Stickers',
+            type: StickerTypes.FULL,
+            quality: 50
+        });
+
+        const stickerBuffer = await sticker.toBuffer();
+
+        await conn.sendMessage(from, {
+            sticker: stickerBuffer
+        }, { quoted: mek });
+
+    } catch (error) {
+        console.error('[STICKER ERROR]', error);
+        await reply(
+            '❌ *Sticker Error*\n\n' +
+            '⚠️ Sticker එක හදන්න බැරි වුණා.\n\n' +
+            '🛠️ *Error:* ' + (error.message || 'Unknown error')
+        );
+    }
+});
 cmd({
     pattern: "setpp",
     alias: ["setprofile", "pp", "setdp"],
