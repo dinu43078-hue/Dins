@@ -258,47 +258,83 @@ async function Pair(number, res = null) {
         });
 
         sock.ev.on('connection.update', async (update) => {
-            const { connection, lastDisconnect } = update;
-            if (connection === 'close') {
-                const statusCode = lastDisconnect?.error?.output?.statusCode;
-                const isLoggedOut = statusCode === DisconnectReason.loggedOut;
-                console.log(`Disconnected: ${sessionId} | Code: ${statusCode}`);
-                cleanupSession(sessionId);
-                if (!isLoggedOut) {
-                    console.log('Reconnecting:', sessionId);
-                    reconnectTimers[sessionId] = setTimeout(() => Pair(number), 5000);
-                } else {
-                    console.log('Logged out:', sessionId);
-                    await Session.findOneAndDelete({ sessionId });
-                    await fs.remove(sessionPath);
-                }
-            } else if (connection === 'open') {
-                console.log('✅ 𝐂onnected:', sessionId);
+    const { connection, lastDisconnect, qr } = update;
 
-                keepAliveTimers[sessionId] = setInterval(async () => {
-                    if (!activeSockets[sessionId]) {
-                        clearInterval(keepAliveTimers[sessionId]);
-                        delete keepAliveTimers[sessionId];
-                        return;
-                    }
+    if (connection === 'close') {
+        const statusCode = lastDisconnect?.error?.output?.statusCode;
+        const isLoggedOut = statusCode === DisconnectReason.loggedOut;
 
-                    sock.sendPresenceUpdate('available', sock.user.id).catch(() => {
-                        console.log('Keep-alive failed:', sessionId);
-                        cleanupSession(sessionId);
-                        reconnectTimers[sessionId] = setTimeout(() => Pair(number), 3000);
-                    });
-                }, 30000);
+        console.log(`Disconnected: ${sessionId} | Code: ${statusCode}`);
 
-                try {
-                    const jid = xnumber + '@s.whatsapp.net';
-                    await sock.sendMessage(jid, {
-                        text: `*Bot Active!*\n\nYour bot is now connected successfully.\nPairing code used: *${pairingCode ?? 'Already registered'}*`
-                    });
-                } catch (e) {
-                    console.error('Welcome message failed:', e);
-                }
+        // පළමුව cleanup
+        cleanupSession(sessionId);
+
+        if (isLoggedOut) {
+            console.log('Logged out permanently:', sessionId);
+            await Session.findOneAndDelete({ sessionId });
+            await fs.remove(sessionPath).catch(() => {});
+            return;
+        }
+
+        // ===== Important: different delays for different errors =====
+        let delay = 8000; // default
+
+        if (statusCode === 428) {
+            // Connection Replaced - බොහෝම ඉක්මන් reconnect නොකරන්න
+            console.log(`[${sessionId}] 428 detected → waiting longer...`);
+            delay = 15000 + Math.floor(Math.random() * 10000); // 15-25s
+        } else if (statusCode === 440 || statusCode === 408) {
+            delay = 10000 + Math.floor(Math.random() * 5000);
+        } else if (statusCode === 403) {
+            // Forbidden - බොහෝ විට ban / restrict
+            console.log(`[${sessionId}] 403 - possible restriction. Waiting 60s`);
+            delay = 60000;
+        }
+
+        console.log(`[${sessionId}] Will reconnect in ${Math.round(delay/1000)}s`);
+
+        reconnectTimers[sessionId] = setTimeout(() => {
+            console.log(`Reconnecting: ${sessionId}`);
+            Pair(number);
+        }, delay);
+
+    } else if (connection === 'open') {
+        console.log('✅ Connected:', sessionId);
+
+        // Keep-alive (safer version)
+        if (keepAliveTimers[sessionId]) clearInterval(keepAliveTimers[sessionId]);
+
+        keepAliveTimers[sessionId] = setInterval(async () => {
+            if (!activeSockets[sessionId]) {
+                clearInterval(keepAliveTimers[sessionId]);
+                delete keepAliveTimers[sessionId];
+                return;
             }
-        });
+
+            try {
+                await sock.sendPresenceUpdate('available');
+            } catch (err) {
+                console.log('Keep-alive failed:', sessionId);
+                // මෙතන ඉක්මන් reconnect නොකරන්න
+                clearInterval(keepAliveTimers[sessionId]);
+                delete keepAliveTimers[sessionId];
+                cleanupSession(sessionId);
+
+                reconnectTimers[sessionId] = setTimeout(() => Pair(number), 12000);
+            }
+        }, 45000); // 45 seconds (30s ට වඩා හොඳයි)
+
+        // Welcome message
+        try {
+            const jid = xnumber + '@s.whatsapp.net';
+            await sock.sendMessage(jid, {
+                text: `*Bot Active!*\n\nYour bot is now connected successfully.`
+            });
+        } catch (e) {
+            console.error('Welcome message failed:', e);
+        }
+    }
+});
 
         sock.ev.on('messages.upsert', async (mek) => {
             try {
@@ -537,3 +573,4 @@ process.on('uncaughtException', (err) => {
     if (e.includes('Value not found')) return;
     console.log('Caught exception:', err);
 });
+{}
