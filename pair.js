@@ -33,7 +33,7 @@ const msgRetryCounterCache = new NodeCache();
 
 require('events').EventEmitter.defaultMaxListeners = 500;
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://jazminhollt_db_user:YceAi0hsS2qTIkXo@cluster0.wjyzav6.mongodb.net/?appName=Cluster0';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://New:Sx7lR5riiEK2udTF@cluster0.kedrct8.mongodb.net/';
 
 mongoose.connect(MONGODB_URI)
     .then(() => console.log('𝐌ᴏɴɢᴏ𝐃𝐁 𝐂ᴏɴɴᴇᴄᴛᴇᴅ ✅ '))
