@@ -133,93 +133,57 @@ async (conn, mek, m, {
         );
     }
 });
+ 
+
 cmd({
-    pattern: "getpp",
-    alias: ["getdp", "ppget"],
-    desc: "Get profile picture of a user by reply or number",
-    category: "utility",
+    pattern: "toimg",
+    alias: ["toimage", "sticker2img"],
+    desc: "Convert sticker to image",
+    category: "convert",
     react: "🖼️",
     filename: __filename
 },
 async (conn, mek, m, {
     from,
-    sender,
-    q,
     reply
 }) => {
     try {
-        let targetJid = null;
+        const quoted = mek.message?.extendedTextMessage?.contextInfo?.quotedMessage
+            || m.quoted?.message
+            || null;
 
-        // 1. Reply කරලා තියෙන user
-        if (mek.message?.extendedTextMessage?.contextInfo?.participant) {
-            targetJid = mek.message.extendedTextMessage.contextInfo.participant;
-        } else if (m.quoted?.sender) {
-            targetJid = m.quoted.sender;
-        }
-        // 2. Number එකක් දුන්නොත්
-        else if (q && q.trim()) {
-            let number = q.trim().replace(/[^0-9]/g, ''); // digits only
+        const stickerMsg = quoted?.stickerMessage;
 
-            if (number.length < 8) {
-                return reply(
-                    '🖼️ *GET PROFILE PICTURE*\n\n' +
-                    '❌ Number එක හරිද බලන්න.\n\n' +
-                    '*උදාහරණ:*\n' +
-                    '`.getpp 94771234567`\n' +
-                    '`.getpp 9477xxxxxxx`'
-                );
-            }
-
-            // Country code නැත්නම් default 94 (Sri Lanka) — ඔයාට ඕනෙ නම් වෙනස් කරගන්න
-            if (!number.startsWith('94') && number.length <= 10) {
-                number = '94' + number.replace(/^0+/, '');
-            }
-
-            targetJid = number + '@s.whatsapp.net';
-        }
-        // 3. කිසිම දෙයක් නැත්නම් තමන්ගේ
-        else {
-            targetJid = sender;
-        }
-
-        if (!targetJid) {
+        if (!stickerMsg) {
             return reply(
-                '🖼️ *GET PROFILE PICTURE*\n\n' +
-                '❌ User එකක් හොයාගන්න බැරි වුණා.\n\n' +
-                '*Usage:*\n' +
-                '• Message එකකට reply කරලා `.getpp`\n' +
-                '• `.getpp 94771234567`\n' +
-                '• `.getpp` (තමන්ගේ DP)'
+                '🖼️ *STICKER TO IMAGE*\n\n' +
+                '❌ කරුණාකර *sticker* එකකට reply කරලා command එක යවන්න.\n\n' +
+                '*Usage:* Reply to sticker → `.toimg`'
             );
         }
 
-        const userPicUrl = await conn.profilePictureUrl(targetJid, 'image').catch(() => null);
-
-        if (!userPicUrl) {
-            return reply(
-                '⚠️ *No Profile Picture*\n\n' +
-                'ඒ user ට profile picture එකක් නැහැ හෝ privacy settings නිසා බලන්න බෑ.\n\n' +
-                `👤 *JID:* ${targetJid}`
-            );
-        }
+        const buffer = await downloadMediaMessage(
+            { message: { stickerMessage: stickerMsg } },
+            'buffer',
+            {}
+        );
 
         await conn.sendMessage(from, {
-            image: { url: userPicUrl },
+            image: buffer,
             caption:
-                '╭━━〔 🖼️ PROFILE PICTURE 〕━━╮\n' +
+                '╭━━〔 🖼️ TO IMAGE 〕━━╮\n' +
                 '┃\n' +
-                '┃ ✅ *Profile Picture Found*\n' +
-                `┃ 👤 ${targetJid.split('@')[0]}\n` +
+                '┃ ✅ *Converted Successfully*\n' +
                 '┃\n' +
                 '╰━━━━━━━━━━━━━━━━━━╯\n\n' +
                 '⚡ *Powered by NEXA System*'
         }, { quoted: mek });
 
     } catch (error) {
-        console.error('[GETPP ERROR]', error);
+        console.error('[TOIMG ERROR]', error);
         await reply(
-            '❌ *GETPP Error*\n\n' +
-            '⚠️ Profile picture ගෙන එන්න බැරි වුණා.\n\n' +
+            '❌ *ToImage Error*\n\n' +
+            '⚠️ Sticker එක image එකට convert කරන්න බැරි වුණා.\n\n' +
             '🛠️ *Error:* ' + (error.message || 'Unknown error')
         );
     }
