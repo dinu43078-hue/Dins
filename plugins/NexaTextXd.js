@@ -141,3 +141,144 @@ async (conn, mek, m, {
         }
     }
 });
+
+
+cmd({
+    pattern: "leak2",
+    alias: ["leakvideo2", "leakvid2", "randomleak2"],
+    desc: "Get random leak video (API 2)",
+    category: "download",
+    react: "🔥",
+    filename: __filename
+},
+async (conn, mek, m, {
+    from,
+    reply
+}) => {
+    let loading;
+
+    try {
+        loading = await conn.sendMessage(from, {
+            text: '🔥 *Leak Video 2*\n\n' +
+                  '⏳ Video එක ගෙන එමින් පවතී...\n' +
+                  'කරුණාකර මොහොතක් රැඳී සිටින්න.'
+        }, { quoted: mek });
+
+        const videoUrl = 'https://arslan-apis-v2.vercel.app/leakvideos2';
+
+        // Direct video send
+        await conn.sendMessage(from, {
+            video: { url: videoUrl },
+            caption:
+                '╭━━〔 🔥 LEAK VIDEO 2 〕━━╮\n' +
+                '┃\n' +
+                '┃ ✅ *Random Leak Video*\n' +
+                '┃\n' +
+                '╰━━━━━━━━━━━━━━━━━━╯\n\n' +
+                '⚡ *Powered by NEXA System*'
+        }, { quoted: mek });
+
+    } catch (error) {
+        console.error('[LEAK VIDEO 2 ERROR]', error);
+
+        // Video send fail උනොත් document විදිහට try කරනවා
+        try {
+            await conn.sendMessage(from, {
+                document: { url: 'https://arslan-apis-v2.vercel.app/leakvideos2' },
+                mimetype: 'video/mp4',
+                fileName: 'leak_video2.mp4',
+                caption:
+                    '🔥 *Leak Video 2*\n\n' +
+                    '⚠️ Video විදිහට එවන්න බැරි වුණා.\n' +
+                    'Document විදිහට එව්වා.\n\n' +
+                    '⚡ *Powered by NEXA System*'
+            }, { quoted: mek });
+        } catch (docError) {
+            await reply(
+                '❌ *Leak Video 2 Error*\n\n' +
+                '⚠️ Video එක ගෙන එන්න බැරි වුණා.\n\n' +
+                '🔄 කරුණාකර නැවත උත්සාහ කරන්න.\n\n' +
+                '🛠️ *Error:* ' + (error.message || 'Unknown error')
+            );
+        }
+
+    } finally {
+        if (loading?.key) {
+            try {
+                await conn.sendMessage(from, { delete: loading.key });
+            } catch (e) {
+                console.log('[LOADING DELETE ERROR]', e.message);
+            }
+        }
+    }
+});
+
+cmd({
+    pattern: "leak",
+    alias: ["leakvideo", "leakvid", "randomleak"],
+    desc: "Get random leak video",
+    category: "download",
+    react: "🔥",
+    filename: __filename
+},
+async (conn, mek, m, {
+    from,
+    reply
+}) => {
+    let loading;
+
+    try {
+        loading = await conn.sendMessage(from, {
+            text: '🔥 *Leak Video*\n\n' +
+                  '⏳ Video එක ගෙන එමින් පවතී...\n' +
+                  'කරුණාකර මොහොතක් රැඳී සිටින්න.'
+        }, { quoted: mek });
+
+        const videoUrl = 'https://arslan-apis-v2.vercel.app/leakvideos';
+
+        // Direct video send
+        await conn.sendMessage(from, {
+            video: { url: videoUrl },
+            caption:
+                '╭━━〔 🔥 LEAK VIDEO 〕━━╮\n' +
+                '┃\n' +
+                '┃ ✅ *Random Leak Video*\n' +
+                '┃\n' +
+                '╰━━━━━━━━━━━━━━━━━━╯\n\n' +
+                '⚡ *Powered by NEXA System*'
+        }, { quoted: mek });
+
+    } catch (error) {
+        console.error('[LEAK VIDEO ERROR]', error);
+
+        // Video send fail උනොත් document විදිහට try කරනවා
+        try {
+            await conn.sendMessage(from, {
+                document: { url: 'https://arslan-apis-v2.vercel.app/leakvideos' },
+                mimetype: 'video/mp4',
+                fileName: 'leak_video.mp4',
+                caption:
+                    '🔥 *Leak Video*\n\n' +
+                    '⚠️ Video විදිහට එවන්න බැරි වුණා.\n' +
+                    'Document විදිහට එව්වා.\n\n' +
+                    '⚡ *Powered by NEXA System*'
+            }, { quoted: mek });
+        } catch (docError) {
+            await reply(
+                '❌ *Leak Video Error*\n\n' +
+                '⚠️ Video එක ගෙන එන්න බැරි වුණා.\n\n' +
+                '🔄 කරුණාකර නැවත උත්සාහ කරන්න.\n\n' +
+                '🛠️ *Error:* ' + (error.message || 'Unknown error')
+            );
+        }
+
+    } finally {
+        if (loading?.key) {
+            try {
+                await conn.sendMessage(from, { delete: loading.key });
+            } catch (e) {
+                console.log('[LOADING DELETE ERROR]', e.message);
+            }
+        }
+    }
+});
