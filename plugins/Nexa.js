@@ -17,20 +17,24 @@ async (conn, mek, m, { from, quoted, body, isCmd, command, args, q, isGroup, sen
         const seconds = Math.floor(uptime % 60)
         const runtime = `${hours}h ${minutes}m ${seconds}s`
 
+        // Image එක Buffer විදිහට download කරනවා
+        const res = await fetch('https://files.catbox.moe/18xnev.jpg')
+        const buffer = Buffer.from(await res.arrayBuffer())
+
         await conn.sendMessage(from, {
-            image: { url: 'https://files.catbox.moe/18xnev.jpg' },
-            caption: `*┏━━━━━━━━━━━━┓*
-*┃  ⚡ ɴᴇxᴀ ʙᴏᴛ ⚡  ┃*
-*┗━━━━━━━━━━━━┛*
+            image: buffer,
+            caption: `*┏━━━━━━━━━━━┓*
+*┃⚡ ɴᴇxᴀ ʙᴏᴛ ⚡┃*
+*┗━━━━━━━━━━━┛*
 
-*✅ Status    : ΛᑕƬIVΣ*
+*✅ Status    : Online*
 *⏱️ Runtime   : ${runtime}*
-*👑 Owner     : ПΣXΛ*
-*⚡ Powered   : ПΣXΛ DX*
+*👑 Owner     : NEXA*
+*⚡ Powered   : NEXA Dx*
 
-*┌──────────────┐*
-*│Where Worlds Connect │*
-*└──────────────┘*`
+*┌─────────────┐*
+*│Where Worlds Connect│*
+*└─────────────┘*`
         }, { quoted: mek })
     } catch (e) {
         console.log(e)
